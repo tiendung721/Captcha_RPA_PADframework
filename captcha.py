@@ -1,26 +1,47 @@
 import base64
 from PIL import Image
+import pytesseract
 from openai import OpenAI
 import os
+import sys
 
-# Đường dẫn file
-CAPTCHA_IMAGE_PATH = "img\\captcha.png"
+sys.stdout.reconfigure(encoding='utf-8')
+
+CAPTCHA_IMAGE_PATH = "img/captcha7.png"
 RESULT_PATH = "result.txt"
 
-# Kiểm tra file đầu vào
 if not os.path.exists(CAPTCHA_IMAGE_PATH):
-    print("Không tìm thấy captcha.png")
+    print("❌ Không tìm thấy ảnh CAPTCHA.")
     exit(1)
 
+image = Image.open(CAPTCHA_IMAGE_PATH)
 
+instruction_img = image.crop((0, 0, image.width, 130))  
 
-# Mã hóa ảnh
+try:
+    instruction_text = pytesseract.image_to_string(instruction_img, lang="vie").strip()
+except Exception as e:
+    print("❌ OCR lỗi:", e)
+    instruction_text = ""
+
+if not instruction_text:
+    instruction_text = "Chọn tất cả hình ảnh có xe đạp"
+    print("⚠️ Không đọc được đề bài, dùng fallback:", instruction_text)
+else:
+    print("✅ Đề bài OCR được:", instruction_text)
+
+client = OpenAI(api_key="...")  # <- Thay bằng API key của bạn
+
 with open(CAPTCHA_IMAGE_PATH, "rb") as img_file:
     base64_image = base64.b64encode(img_file.read()).decode("utf-8")
 
-
-# Gửi yêu cầu đến OpenAI
-client = OpenAI(api_key="...") # Thay thế bằng API key của bạn
+prompt = (
+    f"Đây là ảnh CAPTCHA Google dạng lưới.\n"
+    f"Câu hỏi: \"{instruction_text}\"\n"
+    f"Lưới gồm 9 hoặc 16 ô, đánh số từ 1 đến N trái qua phải, trên xuống dưới.\n"
+    f"Chỉ trả về duy nhất một danh sách số cách nhau bởi dấu phẩy, ví dụ: 2,4,9\n"
+    f"Không mô tả, không giải thích, không dấu [] hay văn bản thừa."
+)
 
 response = client.chat.completions.create(
     model="gpt-4o",
@@ -28,17 +49,7 @@ response = client.chat.completions.create(
         {
             "role": "user",
             "content": [
-                {
-                    "type": "text",
-                    "text": (
-                        f"Đây là ảnh CAPTCHA reCAPTCHA dạng lưới.\n"
-                        f"Hãy đọc yêu cầu của captcha và trả lời bằng một danh sách các ô cần chọn.\n"
-                        "Lưới gồm 9 ô, đánh số từ 1 đến 9 (trái sang phải, trên xuống dưới).\n"
-                        "Hoặc lưới gồm 16 ô, đánh số từ 1 đến 16 (trái sang phải, trên xuống dưới).\n"
-                        "Chỉ trả về duy nhất một danh sách số, ví dụ: [1, 3, 6]."
-                        "Không giải thích, không văn bản thêm."
-                    )
-                },
+                {"type": "text", "text": prompt},
                 {
                     "type": "image_url",
                     "image_url": {
@@ -51,14 +62,11 @@ response = client.chat.completions.create(
     max_tokens=100
 )
 
-# Trích kết quả
 raw_result = response.choices[0].message.content.strip()
-
-# Làm sạch: loại bỏ [ ] và khoảng trắng, giữ lại các số và dấu phẩy
 cleaned_result = raw_result.replace("[", "").replace("]", "").replace(" ", "")
 
-# Ghi ra file
 with open(RESULT_PATH, "w", encoding="utf-8") as f:
     f.write(cleaned_result)
 
-print("DONE")
+print("✅ Kết quả GPT:", cleaned_result)
+print("✅ Đã ghi vào result.txt")

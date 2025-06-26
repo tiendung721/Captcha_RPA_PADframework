@@ -52,15 +52,15 @@ PAD chạy captchaGPT.py để phân tích ảnh
 
 Script tạo ra result.txt chứa chuỗi số ô cần click
 
-3. Đọc kết quả từ result.txt
+### 3. Đọc kết quả từ result.txt
 PAD đọc nội dung file, tách thành danh sách số
 
-4. Click vào các ô CAPTCHA
+### 4. Click vào các ô CAPTCHA
 Mỗi ô trong ảnh CAPTCHA ứng với vị trí (1 → 9)
 
 PAD dùng hành động “Click UI Element” hoặc tọa độ tương ứng với từng số được GPT chọn
 
-5. Xác nhận kết quả
+### 5. Xác nhận kết quả
 PAD nhấn nút “Xác minh” hoặc “Tiếp tục”
 
 Nếu CAPTCHA hiện thêm ảnh → lặp lại bước 1

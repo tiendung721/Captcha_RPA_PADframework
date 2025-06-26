@@ -47,7 +47,6 @@ Nội dung được mô tả chi tiết trong `CaptchaRPA.txt`, tóm tắt như 
 
 ### 2. **Gọi script Python**
 
-```plaintext
 Run Python Script: captchaGPT.py
 PAD chạy captchaGPT.py để phân tích ảnh
 
